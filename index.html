@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Carga v13.1 (Asistencia)</title>
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        :root {
+            --color-primario: #007bff;
+            --color-primario-hover: #0056b3;
+            --color-secundario: #6c757d;
+            --color-peligro: #dc3545;
+            --color-exito: #28a745;
+            --color-fondo: #f4f7f6;
+            --color-tarjeta: #ffffff;
+            --color-texto: #333;
+            --color-titulo: #005a9c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-fondo);
+            color: var(--color-texto);
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .logo-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+            margin-bottom: 20px;
+            grid-column: 1 / -1;
+        }
+        .logo-container img.logo {
+            height: 180px; /* Tamaño grande para el logo */
+            width: auto;
+            cursor: pointer;
+        }
+        
+        #toggle-mode-button {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* --- ESTILOS MODO OFICINA --- */
+        #office-mode {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--color-titulo);
+            border-bottom: 2px solid var(--color-titulo);
+            padding-bottom: 5px;
+            grid-column: 1 / -1;
+            margin-top: 0;
+        }
+        
+        #office-mode h1 {
+            grid-column: 1 / -1;
+            margin-bottom: 0;
+        }
+
+        h2 { margin-top: 10px; }
+
+        .container {
+            background-color: var(--color-tarjeta);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            overflow: hidden;
+        }
+
+        #main-processor {
+            grid-column: 1 / -1;
+            background-color: #e6f7ff;
+            border: 1px solid #b3e0ff;
+        }
+        
+        #prepared-plans-container {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        #prepared-plans-list li { font-weight: bold; }
+        
+        #transfer-text-container {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        #transfer-text-area {
+            width: 98%;
+            height: 100px;
+            font-size: 0.8rem;
+            font-family: "Courier New", Courier, monospace;
+        }
+
+        #product-manager, #truck-manager { grid-column: span 1; }
+
+        textarea {
+            width: 98%;
+            height: 150px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: var(--color-primario);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+            margin-right: 10px;
+            margin-top: 5px;
+        }
+
+        button:hover { background-color: var(--color-primario-hover); }
+        button.danger { background-color: var(--color-peligro); }
+        button.danger:hover { background-color: #c82333; }
+        button.secondary { background-color: var(--color-secundario); }
+        button.secondary:hover { background-color: #5a6268; }
+        button.success { background-color: var(--color-exito); }
+        button.success:hover { background-color: #218838; }
+
+        #result, #product-import-notification {
+            margin-top: 20px; padding: 15px; border-radius: 4px;
+            font-size: 1.1rem; line-height: 1.6; font-weight: 500;
+        }
+        #result.success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        #result.error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        #product-import-notification { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 24px); padding: 10px; margin-bottom: 10px;
+            border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem;
+        }
+        input[type="number"] { width: 100px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 5px; }
+        .form-inline { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .form-inline label { margin-bottom: 0; flex-basis: 100px; flex-shrink: 0; }
+        .form-inline input[type="text"] { flex-grow: 2; margin-bottom: 0; }
+        .form-inline input[type="number"] { flex-grow: 1; margin-bottom: 0; }
+        .form-inline button { flex-shrink: 0; margin-top: 0; }
+
+        #product-db-list, #truck-db-list {
+            height: 300px; overflow-y: auto; border: 1px solid #eee;
+            padding: 10px; background-color: #fafafa; border-radius: 4px; margin-top: 15px;
+        }
+        .db-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; }
+        .db-item:nth-child(even) { background-color: #f9f9f9; }
+        .db-item:last-child { border-bottom: none; }
+        .db-item span { font-family: "Courier New", Courier, monospace; font-size: 0.9rem; word-break: break-word; padding-right: 10px; }
+        .db-item .db-item-desc { flex-grow: 1; }
+        .db-item button { padding: 5px 8px; font-size: 0.8rem; margin-right: 0; margin-left: 5px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tabs { display: flex; border-bottom: 2px solid #ccc; margin-bottom: 20px; }
+        .tab-button { padding: 10px 15px; cursor: pointer; background-color: #f1f1f1; border: 1px solid #ccc; border-bottom: none; margin-bottom: -2px; border-radius: 4px 4px 0 0; font-weight: 500; }
+        .tab-button.active { background-color: #fff; border-bottom: 2px solid #fff; color: var(--color-primario); }
+
+        #csv-paste-area { display: none; margin-top: 15px; }
+        #csv-paste-area textarea { height: 100px; }
+        #load-order-list { list-style-type: decimal; padding-left: 20px; }
+        #load-order-list li { padding: 8px; border-bottom: 1px solid #eee; }
+        #load-order-list li strong { color: var(--color-titulo); font-size: 1.1rem; }
+
+        /* --- ESTILOS MODO OPERARIO --- */
+        #operator-mode {
+            display: none; /* Oculto por defecto */
+            background-color: #2c3e50; /* Fondo oscuro */
+            color: #ecf0f1; /* Texto claro */
+            padding: 20px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+        
+        #operator-mode .logo-container {
+             border-bottom: 2px solid var(--color-primario);
+             padding-bottom: 15px;
+        }
+
+        .operator-screen {
+            display: none; /* Ocultar pantallas por defecto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding-top: 20px;
+        }
+        
+        #operator-mode h2, #operator-mode h3 {
+            color: #ffffff;
+            border-bottom-color: var(--color-primario);
+        }
+
+        #operator-mode button {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        
+        #op-truck-step-screen h2 { font-size: 1.5rem; color: #95a5a6; }
+        #step-instruction {
+            font-size: 1.8rem; font-weight: bold;
+            color: #ffffff; margin: 40px 0;
+        }
+        
+        #operator-incident-button.listening {
+            background-color: var(--color-peligro);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        #report-content, #journey-report-content {
+            background-color: #34495e; color: #ecf0f1; padding: 15px;
+            border-radius: 8px; text-align: left;
+            white-space: pre-wrap; /* Mantiene los saltos de línea */
+            font-family: "Courier New", Courier, monospace;
+            width: 100%; max-width: 500px;
+            box-sizing: border-box; margin-bottom: 20px;
+        }
+        
+        #op-paste-textarea {
+            height: 150px;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px 0;
+        }
+        
+        #op-truck-list-screen .truck-button { background-color: var(--color-primario); }
+        #op-truck-list-screen .truck-button:hover { background-color: var(--color-primario-hover); }
+        #op-truck-list-screen h3 { margin-top: 40px; }
+        
+        /* --- Botón de Asistencia --- */
+        #assistance-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            z-index: 2000;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+    </style>
+</head>
+<body>
+    
+    <div class="logo-container">
+        <a href="https://www.ia2060.com" target="_blank" rel="noopener noreferrer">
+            <img src="https://i.ibb.co/cXhr44XB/LOGO-IA2060-IMG.jpg" alt="Logo de IA2060" class="logo" border="0">
+        </a>
+        <button id="toggle-mode-button" class="secondary">Cambiar a Modo Operario</button>
+    </div>
+
+    <div id="office-mode">
+        <h1>Gestor de Carga (v13.1 - Oficina)</h1>
+
+        <div id="main-processor" class="container">
+            <h2>1. Procesador de Pedidos</h2>
+            <div class="form-group">
+                <label for="pedido-input">Pega aquí el "Resumen Diario de Venta":</label>
+                <textarea id="pedido-input" placeholder="Pega el texto del pedido aquí..."></textarea>
+            </div>
+            <button id="process-button">Procesar y Añadir a Lote</button>
+            <div id="product-import-notification" style="display: none;"></div>
+            <div id="result"></div>
+            
+            <div id="prepared-plans-container" style="display: none;">
+                <h3>Planes de Carga Preparados</h3>
+                <ul id="prepared-plans-list"></ul>
+                <button id="generate-transfer-button" class="success">Generar Texto de Transferencia</button>
+                <button id="clear-plans-button" class="danger">Limpiar Lote</button>
+            </div>
+            
+            <div id="transfer-text-container" style="display: none;">
+                <h3>Texto de Transferencia (Copiar y Enviar al Operario)</h3>
+                <textarea id="transfer-text-area" readonly></textarea>
+                <button id="copy-transfer-text-button">Copiar Texto</button>
+            </div>
+        </div>
+
+        <div id="product-manager" class="container">
+            <h2>2. Base de Datos de Productos</h2>
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab('tab-add-product', this)">Añadir / Editar</button>
+                <button class="tab-button" onclick="openTab('tab-view-products', this)">Ver Lista</button>
+            </div>
+            <div id="tab-add-product" class="tab-content active">
+                <div class="form-inline">
+                    <label for="product-code">Código:</label>
+                    <input type="text" id="product-code" placeholder="Ej: 9001">
+                </div>
+                <div class="form-inline">
+                    <label for="product-desc">Descripción:</label>
+                    <input type="text" id="product-desc" placeholder="Ej: BARRIL 50 LITROS">
+                </div>
+                <div class="form-inline">
+                    <label for="product-volume">Volumen (m³):</label>
+                    <input type="number" id="product-volume" step="0.001" min="0" placeholder="Ej: 0.070">
+                </div>
+                <button id="add-product-button">Añadir / Actualizar Producto</button>
+                <button id="clear-product-form-button" class="secondary">Limpiar</button>
+                <hr style="margin: 20px 0;"><button id="toggle-csv-button" class="secondary">Importar Lista (CSV)</button>
+                <div id="csv-paste-area">
+                    <label for="csv-input">Pega aquí tu lista (Formato: `Codigo,Descripcion,Volumen`):</label>
+                    <textarea id="csv-input" placeholder="9001,BARRIL 50 LITROS,0.070&#10;9002,BARRIL 30 LITROS,0.048"></textarea>
+                    <button id="import-csv-button">Importar CSV</button>
+                </div>
+            </div>
+            <div id="tab-view-products" class="tab-content">
+                <input type="text" id="search-product" placeholder="Buscar producto por código o descripción...">
+                <div id="product-db-list"></div>
+                <button id="export-products-button" class="secondary" style="margin-top: 15px;">Exportar Productos (CSV)</button>
+                <button id="clear-products-button" class="danger" style="margin-top: 15px;">Borrar TODOS los Productos</button>
+            </div>
+        </div>
+
+        <div id="truck-manager" class="container">
+            <h2>3. Base de Datos de Camiones</h2>
+            <div class="form-inline">
+                <label for="truck-name">Nombre:</label>
+                <input type="text" id="truck-name" placeholder="Ej: DISGAL 2">
+            </div>
+            <div class="form-inline">
+                <label for="truck-capacity">Capacidad (m³):</label>
+                <input type="number" id="truck-capacity" step="0.1" min="0" placeholder="Ej: 45.5">
+            </div>
+            <button id="add-truck-button">Añadir / Actualizar Camión</button>
+            <hr style="margin: 20px 0;"><h3>Lista de Camiones Registrados</h3>
+            <div id="truck-db-list"></div>
+            <button id="clear-trucks-button" class="danger" style="margin-top: 15px;">Borrar TODOS los Camiones</button>
+        </div>
+    </div>
+    
+    <div id="operator-mode">
+    
+        <div id="op-welcome-screen" class="operator-screen" style="display: flex;">
+            <h2>Modo Operario</h2>
+            <button id="op-start-journey-button" class="success">INICIAR JORNADA</button>
+        </div>
+        
+        <div id="op-paste-plans-screen" class="operator-screen">
+            <h2>Cargar Planes de Jornada</h2>
+            <label for="op-paste-textarea">Pega aquí el texto de transferencia recibido:</label>
+            <textarea id="op-paste-textarea"></textarea>
+            <button id="op-load-plans-button">Cargar Planes</button>
+        </div>
+
+        <div id="op-truck-list-screen" class="operator-screen">
+            <h2>Camiones Pendientes</h2>
+            <div id="op-truck-list-container"></div>
+            <h3>Jornada en Curso</h3>
+            <button id="op-finish-journey-button" class="danger">FINALIZAR JORNADA</button>
+        </div>
+    
+        <div id="op-truck-start-screen" class="operator-screen">
+            <h2>Preparado para Cargar</h2>
+            <h3 id="start-truck-name" style="font-size: 2rem; color: var(--color-primario);">CAMIÓN X</h3>
+            <button id="op-truck-start-button" class="success">EMPEZAR CARGA DE CAMIÓN</button>
+            <button id="op-truck-cancel-start-button" class="secondary">Volver a Lista</button>
+        </div>
+        
+        <div id="op-truck-step-screen" class="operator-screen">
+            <h2 id="step-counter">Paso X de Y</h2>
+            <p id="step-instruction">Instrucción de carga...</p>
+            <button id="operator-next-button" class="success">SIGUIENTE</button>
+            <button id="operator-incident-button" class="danger">Grabar Incidencia</button>
+            <button id="operator-abandon-button" class="secondary" style="margin-top: 40px;">Abandonar Carga (Volver a Lista)</button>
+        </div>
+        
+        <div id="op-truck-report-screen" class="operator-screen">
+            <h2>Informe de Camión Finalizado</h2>
+            <pre id="report-content">Generando informe...</pre>
+            <button id="operator-whatsapp-button" class="success">Enviar por WhatsApp</button>
+            <button id="operator-email-button">Enviar por Email</button>
+            <button id="op-truck-report-exit-button" class="secondary">Volver a Lista de Camiones</button>
+        </div>
+        
+        <div id="op-journey-report-screen" class="operator-screen">
+            <h2>Informe de Jornada Finalizado</h2>
+            <pre id="journey-report-content">Generando informe de jornada...</pre>
+            <button id="journey-whatsapp-button" class="success">Enviar por WhatsApp</button>
+            <button id="journey-email-button">Enviar por Email</button>
+            <button id="op-journey-report-exit-button" class="secondary">NUEVA JORNADA</button>
+        </div>
+        
+    </div>
+
+    <button id="assistance-button" class="secondary" title="Solicitar Asistencia">?</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONSTANTES DE ALMACENAMIENTO ---
+            const PRODUCT_DB_KEY = 'productDB_v10';
+            const TRUCK_DB_KEY = 'truckDB_v10';
+
+            // --- ELEMENTOS DEL DOM (GLOBAL) ---
+            const toggleModeButton = document.getElementById('toggle-mode-button');
+            const officeModeDiv = document.getElementById('office-mode');
+            const operatorModeDiv = document.getElementById('operator-mode');
+            const assistanceButton = document.getElementById('assistance-button'); 
+            
+            // --- ELEMENTOS DEL DOM (OFICINA) ---
+            const pedidoInput = document.getElementById('pedido-input');
+            const processButton = document.getElementById('process-button');
+            const resultDiv = document.getElementById('result');
+            const importNotificationDiv = document.getElementById('product-import-notification');
+            const addProductButton = document.getElementById('add-product-button');
+            const clearProductFormButton = document.getElementById('clear-product-form-button');
+            const productCodeInput = document.getElementById('product-code');
+            const productDescInput = document.getElementById('product-desc');
+            const productVolumeInput = document.getElementById('product-volume');
+            const productDbListDiv = document.getElementById('product-db-list');
+            const clearProductsButton = document.getElementById('clear-products-button');
+            const searchProductInput = document.getElementById('search-product');
+            const exportProductsButton = document.getElementById('export-products-button');
+            const toggleCsvButton = document.getElementById('toggle-csv-button');
+            const csvPasteArea = document.getElementById('csv-paste-area');
+            const csvInput = document.getElementById('csv-input');
+            const importCsvButton = document.getElementById('import-csv-button');
+            const addTruckButton = document.getElementById('add-truck-button');
+            const truckNameInput = document.getElementById('truck-name');
+            const truckCapacityInput = document.getElementById('truck-capacity');
+            const truckDbListDiv = document.getElementById('truck-db-list');
+            const clearTrucksButton = document.getElementById('clear-trucks-button');
+            
+            // --- v13: Lote de Carga (Oficina) ---
+            const preparedPlansContainer = document.getElementById('prepared-plans-container');
+            const preparedPlansList = document.getElementById('prepared-plans-list');
+            const generateTransferButton = document.getElementById('generate-transfer-button');
+            const clearPlansButton = document.getElementById('clear-plans-button');
+            const transferTextContainer = document.getElementById('transfer-text-container');
+            const transferTextArea = document.getElementById('transfer-text-area');
+            const copyTransferTextButton = document.getElementById('copy-transfer-text-button');
+            
+            // --- ELEMENTOS DEL DOM (OPERARIO) ---
+            const opWelcomeScreen = document.getElementById('op-welcome-screen');
+            const opStartJourneyButton = document.getElementById('op-start-journey-button');
+            const opPastePlansScreen = document.getElementById('op-paste-plans-screen');
+            const opPasteTextarea = document.getElementById('op-paste-textarea');
+            const opLoadPlansButton = document.getElementById('op-load-plans-button');
+            const opTruckListScreen = document.getElementById('op-truck-list-screen');
+            const opTruckListContainer = document.getElementById('op-truck-list-container');
+            const opFinishJourneyButton = document.getElementById('op-finish-journey-button');
+            const opTruckStartScreen = document.getElementById('op-truck-start-screen');
+            const startTruckName = document.getElementById('start-truck-name');
+            const opTruckStartButton = document.getElementById('op-truck-start-button');
+            const opTruckCancelStartButton = document.getElementById('op-truck-cancel-start-button');
+            const opTruckStepScreen = document.getElementById('op-truck-step-screen');
+            const stepCounter = document.getElementById('step-counter');
+            const stepInstruction = document.getElementById('step-instruction');
+            const operatorNextButton = document.getElementById('operator-next-button');
+            const operatorIncidentButton = document.getElementById('operator-incident-button');
+            const operatorAbandonButton = document.getElementById('operator-abandon-button');
+            const opTruckReportScreen = document.getElementById('op-truck-report-screen');
+            const reportContent = document.getElementById('report-content');
+            const operatorWhatsappButton = document.getElementById('operator-whatsapp-button');
+            const operatorEmailButton = document.getElementById('operator-email-button');
+            const opTruckReportExitButton = document.getElementById('op-truck-report-exit-button');
+            const opJourneyReportScreen = document.getElementById('op-journey-report-screen');
+            const journeyReportContent = document.getElementById('journey-report-content');
+            const journeyWhatsappButton = document.getElementById('journey-whatsapp-button');
+            const journeyEmailButton = document.getElementById('journey-email-button');
+            const opJourneyReportExitButton = document.getElementById('op-journey-report-exit-button');
+
+            // --- BASES DE DATOS ---
+            let productDB = JSON.parse(localStorage.getItem(PRODUCT_DB_KEY)) || {};
+            let truckDB = JSON.parse(localStorage.getItem(TRUCK_DB_KEY)) || {};
+            
+            // --- v13: ESTADO GLOBAL ---
+            let preparedPlans = []; // Oficina: Lote de planes
+            let journeyStartTime = null; // Operario: Hora inicio jornada
+            let allJourneyIncidents = []; // Operario: Acumula todas las incidencias
+            let operatorTrucksPending = []; // Operario: Planes pendientes
+            let operatorTrucksCompleted = []; // Operario: Nombres de camiones terminados
+            
+            // --- ESTADO DE CARGA (Operario, para 1 camión) ---
+            let currentLoadList = [];
+            let currentTruckName = '';
+            let currentStep = 0;
+            let loadStartTime = null;
+            let loadIncidents = [];
+            
+            // --- APIs DE VOZ ---
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'es-ES'; recognition.continuous = false; recognition.interimResults = false;
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    const time = formatTime(new Date()); 
+                    const stepText = currentLoadList[currentStep]?.desc || 'General';
+                    const incidentText = `${time} - Paso ${currentStep + 1} (${stepText}): "${transcript}"`;
+                    loadIncidents.push(incidentText);
+                    alert(`Incidencia registrada: "${transcript}"`);
+                };
+                recognition.onerror = (event) => alert('Error de micrófono: ' + event.error);
+                recognition.onend = () => {
+                    operatorIncidentButton.textContent = 'Grabar Incidencia';
+                    operatorIncidentButton.classList.remove('listening');
+                    operatorIncidentButton.disabled = false;
+                };
+            }
+
+            // --- LÓGICA DE PESTAÑAS (OFICINA) ---
+            window.openTab = (tabName, elmnt) => {
+                let i, tabcontent, tablinks;
+                tabcontent = elmnt.closest('.container').getElementsByClassName("tab-content");
+                for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
+                tablinks = elmnt.closest('.container').getElementsByClassName("tab-button");
+                for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+                document.getElementById(tabName).style.display = "block";
+                elmnt.className += " active";
+                if(tabName === 'tab-view-products') { renderProductList(); }
+            }
+
+            // --- GESTIÓN DE PRODUCTOS (OFICINA) ---
+            const saveProducts = () => localStorage.setItem(PRODUCT_DB_KEY, JSON.stringify(productDB));
+            const clearProductForm = () => {
+                productCodeInput.value = ''; productDescInput.value = ''; productVolumeInput.value = '';
+                productCodeInput.disabled = false;
+            };
+            const addProduct = () => {
+                const code = productCodeInput.value.trim(); const desc = productDescInput.value.trim();
+                const volume = parseFloat(productVolumeInput.value);
+                if (!code) { alert('El Código es obligatorio.'); return; }
+                if (!desc) { alert('La Descripción es obligatoria.'); return; }
+                if (isNaN(volume) || volume < 0) { alert('El Volumen debe ser un número positivo.'); return; }
+                productDB[code] = { desc, volume };
+                saveProducts(); clearProductForm();
+                const viewTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-view-products"]');
+                openTab('tab-view-products', viewTabButton);
+                searchProductInput.value = code; renderProductList();
+                alert(`Producto ${code} guardado/actualizado.`);
+            };
+            window.editProduct = (code) => {
+                const product = productDB[code];
+                if (product) {
+                    productCodeInput.value = code; productDescInput.value = product.desc; productVolumeInput.value = product.volume;
+                    productCodeInput.disabled = true; 
+                    const addTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-add-product"]');
+                    openTab('tab-add-product', addTabButton);
+                }
+            };
+            window.deleteProduct = (code) => {
+                if (confirm(`¿Eliminar producto ${code}?`)) {
+                    delete productDB[code]; saveProducts(); renderProductList();
+                }
+            };
+            const renderProductList = () => {
+                productDbListDiv.innerHTML = ''; const filter = searchProductInput.value.toLowerCase();
+                const sortedCodes = Object.keys(productDB).sort();
+                if (sortedCodes.length === 0) { productDbListDiv.innerHTML = '<p>No hay productos.</p>'; return; }
+                let visibleCount = 0;
+                sortedCodes.forEach(code => {
+                    const product = productDB[code]; const productString = `${code} ${product.desc}`.toLowerCase();
+                    if (productString.includes(filter)) {
+                        visibleCount++; const item = document.createElement('div'); item.className = 'db-item';
+                        item.innerHTML = `
+                            <span><strong>${code}</strong></span><span class="db-item-desc">${product.desc}</span>
+                            <span>${product.volume.toFixed(6)} m³</span>
+                            <div><button onclick="editProduct('${code}')" class="secondary">Editar</button>
+                                 <button onclick="deleteProduct('${code}')" class="danger">X</button></div>`;
+                        productDbListDiv.appendChild(item);
+                    }
+                });
+                if (visibleCount === 0) { productDbListDiv.innerHTML = '<p>No se encontraron productos.</p>'; }
+            };
+            const clearAllProducts = () => {
+                if (confirm('¿BORRAR TODOS los productos?')) {
+                    productDB = {}; saveProducts(); renderProductList();
+                }
+            };
+            const exportProducts = () => {
+                let csvContent = "data:text/csv;charset=utf-8,Codigo,Descripcion,Volumen\n";
+                Object.keys(productDB).sort().forEach(code => {
+                    const p = productDB[code]; csvContent += `${code},"${p.desc.replace(/"/g, '""')}",${p.volume}\n`;
+                });
+                const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "productos_carga_v13.csv"); document.body.appendChild(link);
+                link.click(); document.body.removeChild(link);
+            };
+            const toggleCsvImport = () => {
+                csvPasteArea.style.display = (csvPasteArea.style.display === 'none' || csvPasteArea.style.display === '') ? 'block' : 'none';
+                toggleCsvButton.textContent = csvPasteArea.style.display === 'block' ? 'Ocultar Importación (CSV)' : 'Importar Lista (CSV)';
+            };
+            const importCsvProducts = () => {
+                const text = csvInput.value.trim(); if (!text) return;
+                const lines = text.split('\n'); let importedCount = 0, errorCount = 0;
+                lines.forEach(line => {
+                    const parts = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+                    if (parts && parts.length === 3) {
+                        try {
+                            const code = parts[0].trim().replace(/"/g, ''); const desc = parts[1].trim().replace(/"/g, '');
+                            const volume = parseFloat(parts[2].trim().replace(/"/g, ''));
+                            if (code && desc && !isNaN(volume) && volume >= 0) {
+                                productDB[code] = { desc, volume }; importedCount++;
+                            } else { errorCount++; }
+                        } catch (e) { errorCount++; }
+                    } else if (line.trim() !== "" && !line.startsWith("Codigo")) { errorCount++; }
+                });
+                if (importedCount > 0) {
+                    saveProducts(); alert(`Importación: ${importedCount} productos añadidos/actualizados.`);
+                    csvInput.value = ''; toggleCsvImport();
+                    const viewTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-view-products"]');
+                    openTab('tab-view-products', viewTabButton); searchProductInput.value = ''; renderProductList();
+                }
+                if (errorCount > 0) { alert(`${errorCount} líneas no pudieron ser procesadas.`); }
+            };
+
+            // --- GESTIÓN DE CAMIONES (OFICINA) ---
+            const saveTrucks = () => localStorage.setItem(TRUCK_DB_KEY, JSON.stringify(truckDB));
+            const addTruck = () => {
+                const name = truckNameInput.value.trim(); const capacity = parseFloat(truckCapacityInput.value);
+                if (!name) { alert('El Nombre es obligatorio.'); return; }
+                if (isNaN(capacity) || capacity <= 0) { alert('La Capacidad debe ser un número positivo.'); return; }
+                truckDB[name] = { capacity }; saveTrucks();
+                truckNameInput.value = ''; truckCapacityInput.value = '';
+                renderTruckList(); alert(`Camión ${name} guardado/actualizado.`);
+            };
+            window.editTruck = (name) => {
+                const truck = truckDB[name];
+                if (truck) { truckNameInput.value = name; truckCapacityInput.value = truck.capacity; }
+            };
+            window.deleteTruck = (name) => {
+                if (confirm(`¿Eliminar camión ${name}?`)) {
+                    delete truckDB[name]; saveTrucks(); renderTruckList();
+                }
+            };
+            const renderTruckList = () => {
+                truckDbListDiv.innerHTML = ''; const truckNames = Object.keys(truckDB).sort();
+                if (truckNames.length === 0) { truckDbListDiv.innerHTML = '<p>No hay camiones.</p>'; return; }
+                truckNames.forEach(name => {
+                    const truck = truckDB[name]; const item = document.createElement('div'); item.className = 'db-item';
+                    item.innerHTML = `
+                        <span class="db-item-desc"><strong>${name}</strong></span>
+                        <span>${truck.capacity.toFixed(2)} m³</span>
+                        <div><button onclick="editTruck('${name}')" class="secondary">Editar</button>
+                             <button onclick="deleteTruck('${name}')" class="danger">X</button></div>`;
+                    truckDbListDiv.appendChild(item);
+                });
+            };
+            const clearAllTrucks = () => {
+                if (confirm('¿BORRAR TODOS los camiones?')) {
+                    truckDB = {}; saveTrucks(); renderTruckList();
+                }
+            };
+
+            // --- PROCESADOR DE PEDIDOS (OFICINA - v13) ---
+            const parsePedido = (text) => {
+                const lines = text.split('\n'); const products = new Map(); let truckName = null;
+                const productRegex = /^\s*(\d+(\.\d+)?)\s+(\S+)\s+-\s+(.+)$/;
+                const truckRegex = /Camión:\s*(.+)/i;
+                const productRegexNoDash = /^\s*(\d+(\.\d+)?)\s+(\d{4,})\s+(.+)$/;
+                lines.forEach(line => {
+                    let match = line.match(truckRegex); if (match) { truckName = match[1].trim(); }
+                    match = line.match(productRegex);
+                    if (match) {
+                        const qty = parseFloat(match[1]); const code = match[3].trim(); const desc = match[4].trim();
+                        if (qty > 0 && code) { products.set(code, { qty: (products.get(code)?.qty || 0) + qty, desc }); }
+                    } else {
+                        match = line.match(productRegexNoDash);
+                        if(match) {
+                            const qty = parseFloat(match[1]); const code = match[3].trim(); const desc = match[4].trim();
+                            if (qty > 0 && code && code.length >= 4 && !isNaN(parseInt(code))) {
+                                products.set(code, { qty: (products.get(code)?.qty || 0) + qty, desc });
+                            }
+                        }
+                    }
+                });
+                return { products, truckName };
+            };
+            
+            const processPedido = () => {
+                const text = pedidoInput.value;
+                if (!text.trim()) { resultDiv.innerHTML = 'El área del pedido está vacía.'; resultDiv.className = 'error'; return; }
+                const { products, truckName } = parsePedido(text);
+                if (!truckName) {
+                    resultDiv.innerHTML = `<strong>Error: No se pudo detectar el nombre del camión.</strong>`;
+                    resultDiv.className = 'error'; importNotificationDiv.style.display = 'none'; return;
+                }
+                const truck = truckDB[truckName];
+                if (!truck) {
+                    resultDiv.innerHTML = `<strong>Error: Camión "${truckName}" no encontrado.</strong>`;
+                    resultDiv.className = 'error'; importNotificationDiv.style.display = 'none'; return;
+                }
+                if (products.size === 0) {
+                    resultDiv.innerHTML = `<strong>Error: No se encontraron productos.</strong>`;
+                    resultDiv.className = 'error'; importNotificationDiv.style.display = 'none'; return;
+                }
+                if (preparedPlans.find(p => p.truckName === truckName)) {
+                    resultDiv.innerHTML = `<strong>Error: El camión "${truckName}" ya está en el lote de carga.</strong><br>Limpia el lote si quieres empezar de nuevo.`;
+                    resultDiv.className = 'error'; return;
+                }
+
+                let totalVolume = 0, missingProducts = [], importedProducts = [];
+                let productListForLoading = []; 
+                const DEFAULT_VOLUME = 0.000001; 
+
+                products.forEach((data, code) => {
+                    const productData = productDB[code];
+                    let itemVolume = DEFAULT_VOLUME, itemDesc = data.desc;
+                    if (!productData) {
+                        missingProducts.push(`<strong>${code}</strong> (${data.desc})`);
+                        productDB[code] = { desc: data.desc, volume: DEFAULT_VOLUME };
+                        importedProducts.push(code);
+                    } else {
+                        itemVolume = productData.volume; itemDesc = productData.desc;
+                    }
+                    const itemTotalVolume = data.qty * itemVolume;
+                    totalVolume += itemTotalVolume;
+                    productListForLoading.push({ code, desc: itemDesc, qty: data.qty, totalVolume: itemTotalVolume });
+                });
+
+                productListForLoading.sort((a, b) => b.totalVolume - a.totalVolume);
+                
+                let resultHTML = `<h3>Resultados para: ${truckName} (Cap: ${truck.capacity.toFixed(2)} m³)</h3>`;
+                
+                if (importedProducts.length > 0) {
+                    saveProducts(); 
+                    importNotificationDiv.innerHTML = `<strong>¡Productos Importados!</strong><br>Se han añadido ${importedProducts.length} productos nuevos. <strong>Acción Requerida:</strong> Actualiza sus volúmenes.`;
+                    importNotificationDiv.style.display = 'block';
+                    if (document.getElementById('tab-view-products').style.display === 'block') { renderProductList(); }
+                } else { importNotificationDiv.style.display = 'none'; }
+
+                const remainingCapacity = truck.capacity - totalVolume;
+                if (remainingCapacity < 0) {
+                    resultDiv.className = 'error';
+                    resultHTML += `<h2><span style="font-size: 2.5rem;">❌</span> ¡LA CARGA NO CABE!</h2>`;
+                    resultHTML += `<p><strong>Volumen Excedido: ${Math.abs(remainingCapacity).toFixed(4)} m³</strong></p>`;
+                } else {
+                    resultDiv.className = 'success';
+                    resultHTML += `<h2><span style="font-size: 2.5rem;">✅</span> ¡AÑADIDO AL LOTE!</h2>`;
+                    resultHTML += `<p><strong>Camión: ${truckName}</strong> | <strong>Volumen Total: ${totalVolume.toFixed(4)} m³</strong></p>`;
+                    // v13: Guardar plan en el lote SÓLO SI CABE
+                    const newPlan = { truckName, loadList: productListForLoading };
+                    preparedPlans.push(newPlan);
+                }
+                
+                resultHTML += '<h3>Orden de Carga Sugerido:</h3><ol id="load-order-list">';
+                productListForLoading.forEach(item => {
+                    resultHTML += `<li><strong>${item.qty.toFixed(1)} uds</strong> - ${item.desc}</li>`;
+                });
+                resultHTML += '</ol>';
+                
+                resultDiv.innerHTML = resultHTML;
+                renderPreparedPlansList();
+                pedidoInput.value = ''; // Limpiar el input después de procesar
+            };
+            
+            // --- v13: Lógica de Lotes (Oficina) ---
+            const renderPreparedPlansList = () => {
+                if (preparedPlans.length === 0) {
+                    preparedPlansContainer.style.display = 'none';
+                    return;
+                }
+                preparedPlansContainer.style.display = 'block';
+                transferTextContainer.style.display = 'none';
+                preparedPlansList.innerHTML = '';
+                preparedPlans.forEach(plan => {
+                    const li = document.createElement('li');
+                    li.textContent = `${plan.truckName} (${plan.loadList.length} pasos)`;
+                    preparedPlansList.appendChild(li);
+                });
+            };
+            
+            const generateTransferText = () => {
+                if (preparedPlans.length === 0) {
+                    alert('No hay planes en el lote para generar.'); return;
+                }
+                try {
+                    const dataString = JSON.stringify(preparedPlans);
+                    const encodedData = btoa(dataString); // Codificar a Base64
+                    transferTextContainer.style.display = 'block';
+                    transferTextArea.value = encodedData;
+                } catch (e) {
+                    alert('Error al generar el texto de transferencia: ' + e.message);
+                }
+            };
+            
+            const copyTransferText = () => {
+                transferTextArea.select();
+                document.execCommand('copy');
+                alert('¡Texto copiado al portapapeles!');
+            };
+            
+            const clearPreparedPlans = () => {
+                if (confirm('¿Limpiar el lote de camiones preparados?')) {
+                    preparedPlans = [];
+                    renderPreparedPlansList();
+                    resultDiv.innerHTML = 'Lote de carga limpiado. Listo para procesar nuevos pedidos.';
+                    resultDiv.className = '';
+                    transferTextContainer.style.display = 'none';
+                    importNotificationDiv.style.display = 'none';
+                }
+            };
+
+            // --- LÓGICA DE CAMBIO DE MODO (Global) ---
+            const showOfficeMode = () => {
+                operatorModeDiv.style.display = 'none';
+                officeModeDiv.style.display = 'grid';
+                toggleModeButton.textContent = 'Cambiar a Modo Operario';
+                document.body.style.backgroundColor = 'var(--color-fondo)';
+            };
+            
+            const showOperatorMode = () => {
+                officeModeDiv.style.display = 'none';
+                operatorModeDiv.style.display = 'block';
+                showOperatorScreen('op-welcome-screen');
+                toggleModeButton.textContent = 'Volver a Modo Oficina';
+                document.body.style.backgroundColor = '#2c3e50';
+            };
+            
+            toggleModeButton.addEventListener('click', () => {
+                if (officeModeDiv.style.display === 'grid') {
+                    showOperatorMode();
+                } else {
+                    if (journeyStartTime === null || confirm('¿Salir del Modo Operario? Se perderá el progreso de la jornada.')) {
+                        showOfficeMode();
+                    }
+                }
+            });
+
+            // --- LÓGICA MODO OPERARIO (v13) ---
+            
+            const showOperatorScreen = (screenId) => {
+                document.querySelectorAll('.operator-screen').forEach(s => s.style.display = 'none');
+                document.getElementById(screenId).style.display = 'flex';
+            };
+
+            const formatTime = (date) => date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            
+            const speak = (text) => {
+                if (!('speechSynthesis' in window)) { return; }
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES'; utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            };
+
+            const startJourney = () => {
+                journeyStartTime = new Date();
+                allJourneyIncidents = [];
+                operatorTrucksCompleted = [];
+                operatorTrucksPending = [];
+                opPasteTextarea.value = ''; // Limpiar textarea
+                showOperatorScreen('op-paste-plans-screen');
+            };
+            
+            const loadPlansFromText = () => {
+                const text = opPasteTextarea.value.trim();
+                if (!text) { alert('El área de texto está vacía.'); return; }
+                try {
+                    const decodedString = atob(text); // Decodificar Base64
+                    operatorTrucksPending = JSON.parse(decodedString);
+                    if (!Array.isArray(operatorTrucksPending) || operatorTrucksPending.length === 0) {
+                        throw new Error('No se encontraron planes válidos.');
+                    }
+                    renderOperatorTruckList();
+                    showOperatorScreen('op-truck-list-screen');
+                } catch (e) {
+                    alert('Error al cargar los planes. El texto no es válido.\n' + e.message);
+                }
+            };
+            
+            const renderOperatorTruckList = () => {
+                opTruckListContainer.innerHTML = '';
+                if (operatorTrucksPending.length === 0) {
+                    opTruckListContainer.innerHTML = '<p>¡No quedan camiones pendientes!</p>';
+                    opFinishJourneyButton.style.display = 'block';
+                } else {
+                    operatorTrucksPending.forEach(plan => {
+                        const button = document.createElement('button');
+                        button.textContent = `Cargar ${plan.truckName} (${plan.loadList.length} pasos)`;
+                        button.className = 'truck-button';
+                        button.onclick = () => selectTruckToLoad(plan.truckName);
+                        opTruckListContainer.appendChild(button);
+                    });
+                    opFinishJourneyButton.style.display = 'none';
+                }
+            };
+            
+            const selectTruckToLoad = (truckName) => {
+                const plan = operatorTrucksPending.find(p => p.truckName === truckName);
+                currentLoadList = plan.loadList;
+                currentTruckName = plan.truckName;
+                startTruckName.textContent = currentTruckName;
+                showOperatorScreen('op-truck-start-screen');
+            };
+            
+            const startTruckLoad = () => {
+                loadStartTime = new Date();
+                loadIncidents = [];
+                currentStep = 0;
+                showOperatorScreen('op-truck-step-screen');
+                showStep(0);
+            };
+
+            const showStep = (index) => {
+                if (index >= currentLoadList.length) {
+                    finishTruckLoad(); return;
+                }
+                const item = currentLoadList[index];
+                const text = `Cargar ${item.qty.toFixed(1)} uds - ${item.code} (${item.desc})`;
+                stepCounter.textContent = `Paso ${index + 1} de ${currentLoadList.length}`;
+                stepInstruction.textContent = text;
+                operatorNextButton.textContent = (index === currentLoadList.length - 1) ? 'FINALIZAR CARGA' : 'SIGUIENTE';
+                speak(text);
+            };
+            
+            const recordIncident = () => {
+                if (!SpeechRecognition) {
+                    const incident = prompt('Navegador no compatible. Escribe la incidencia:');
+                    if (incident) {
+                        const time = formatTime(new Date());
+                        const stepText = currentLoadList[currentStep]?.desc || 'General';
+                        const incidentText = `${time} - Paso ${currentStep + 1} (${stepText}): "${incident}"`;
+                        loadIncidents.push(incidentText);
+                        alert('Incidencia registrada.');
+                    }
+                    return;
+                }
+                try {
+                    operatorIncidentButton.textContent = '... Escuchando ...';
+                    operatorIncidentButton.classList.add('listening'); operatorIncidentButton.disabled = true;
+                    recognition.start();
+                } catch (e) {
+                    alert('Error al iniciar el micrófono. ¿Diste permiso?');
+                    operatorIncidentButton.textContent = 'Grabar Incidencia';
+                    operatorIncidentButton.classList.remove('listening'); operatorIncidentButton.disabled = false;
+                }
+            };
+            
+            const finishTruckLoad = () => {
+                const endTime = new Date();
+                const totalTimeMin = Math.round((endTime - loadStartTime) / 60000);
+                
+                let report = `--- INFORME DE CAMIÓN ---\n\n`;
+                report += `Camión: ${currentTruckName}\nFecha: ${endTime.toLocaleDateString('es-ES')}\n`;
+                report += `Hora Inicio Carga: ${formatTime(loadStartTime)}\nHora Fin Carga: ${formatTime(endTime)}\n`;
+                report += `Tiempo Total: ${totalTimeMin} minutos\n\n`;
+                
+                if (loadIncidents.length > 0) {
+                    report += `--- INCIDENCIAS (${loadIncidents.length}) ---\n`;
+                    loadIncidents.forEach(inc => { report += `- ${inc}\n`; });
+                    allJourneyIncidents.push(...loadIncidents);
+                } else {
+                    report += `--- SIN INCIDENCIAS ---`;
+                }
+                
+                reportContent.textContent = report;
+                operatorTrucksCompleted.push(currentTruckName);
+                operatorTrucksPending = operatorTrucksPending.filter(p => p.truckName !== currentTruckName);
+                
+                speak('Carga de camión finalizada. Revisa el informe.');
+                showOperatorScreen('op-truck-report-screen');
+            };
+            
+            const finishJourney = () => {
+                const journeyEndTime = new Date();
+                const totalTimeMin = Math.round((journeyEndTime - journeyStartTime) / 60000);
+
+                let report = `--- INFORME DE JORNADA ---\n\n`;
+                report += `Fecha: ${journeyEndTime.toLocaleDateString('es-ES')}\n`;
+                report += `Hora Inicio Jornada: ${formatTime(journeyStartTime)}\n`;
+                report += `Hora Fin Jornada: ${formatTime(journeyEndTime)}\n`;
+                report += `Tiempo Total: ${totalTimeMin} minutos\n\n`;
+                report += `--- CAMIONES CARGADOS (${operatorTrucksCompleted.length}) ---\n`;
+                report += operatorTrucksCompleted.join(', ') || 'Ninguno';
+                report += `\n\n`;
+                
+                if (allJourneyIncidents.length > 0) {
+                    report += `--- RESUMEN DE INCIDENCIAS (${allJourneyIncidents.length}) ---\n`;
+                    allJourneyIncidents.forEach(inc => { report += `- ${inc}\n`; });
+                } else {
+                    report += `--- SIN INCIDENCIAS EN LA JORNADA ---`;
+                }
+                
+                journeyReportContent.textContent = report;
+                speak('Jornada finalizada. Revisa el informe final.');
+                showOperatorScreen('op-journey-report-screen');
+            };
+            
+            const shareReport = (via, textContent, subject) => {
+                const text = textContent;
+                let url = '';
+                if (via === 'whatsapp') {
+                    url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                } else {
+                    url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+                }
+                window.open(url, '_blank');
+            };
+
+            // --- ASIGNACIÓN DE EVENTOS (GLOBAL) ---
+            toggleModeButton.addEventListener('click', () => {
+                if (officeModeDiv.style.display === 'grid') {
+                    showOperatorMode();
+                } else {
+                    if (journeyStartTime === null || confirm('¿Salir del Modo Operario? Se perderá el progreso de la jornada.')) {
+                        showOfficeMode();
+                    }
+                }
+            });
+
+            assistanceButton.addEventListener('click', () => {
+                const phone = '+34643734158';
+                const problem = prompt('Por favor, describe brevemente tu problema:');
+                if (problem) {
+                    const message = `¡Hola! Necesito asistencia con la app Gestor de Carga (v13.1).\n\nProblema: ${problem}`;
+                    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
+                    window.open(url, '_blank');
+                }
+            });
+
+            // --- ASIGNACIÓN DE EVENTOS (OFICINA) ---
+            processButton.addEventListener('click', processPedido);
+            generateTransferButton.addEventListener('click', generateTransferText);
+            copyTransferTextButton.addEventListener('click', copyTransferText);
+            clearPlansButton.addEventListener('click', clearPreparedPlans);
+            addProductButton.addEventListener('click', addProduct);
+            clearProductFormButton.addEventListener('click', clearProductForm);
+            clearProductsButton.addEventListener('click', clearAllProducts);
+            searchProductInput.addEventListener('input', renderProductList);
+            exportProductsButton.addEventListener('click', exportProducts);
+            toggleCsvButton.addEventListener('click', toggleCsvImport);
+            importCsvButton.addEventListener('click', importCsvProducts);
+            addTruckButton.addEventListener('click', addTruck);
+            clearTrucksButton.addEventListener('click', clearAllTrucks);
+            
+            // --- ASIGNACIÓN DE EVENTOS (OPERARIO) ---
+            opStartJourneyButton.addEventListener('click', startJourney);
+            opLoadPlansButton.addEventListener('click', loadPlansFromText);
+            opTruckCancelStartButton.addEventListener('click', () => showOperatorScreen('op-truck-list-screen'));
+            opTruckStartButton.addEventListener('click', startTruckLoad);
+            operatorNextButton.addEventListener('click', () => { currentStep++; showStep(currentStep); });
+            operatorIncidentButton.addEventListener('click', recordIncident);
+            operatorAbandonButton.addEventListener('click', () => {
+                if (confirm('¿Seguro que quieres abandonar la carga? Volverás a la lista.')) {
+                    speak('Carga abandonada');
+                    renderOperatorTruckList();
+                    showOperatorScreen('op-truck-list-screen');
+                }
+            });
+            opTruckReportExitButton.addEventListener('click', () => {
+                renderOperatorTruckList();
+                showOperatorScreen('op-truck-list-screen');
+            });
+            opFinishJourneyButton.addEventListener('click', finishJourney);
+            opJourneyReportExitButton.addEventListener('click', () => showOperatorScreen('op-welcome-screen'));
+            
+            operatorWhatsappButton.addEventListener('click', () => shareReport('whatsapp', reportContent.textContent, ''));
+            operatorEmailButton.addEventListener('click', () => shareReport('email', reportContent.textContent, `Informe de Carga - ${currentTruckName}`));
+            journeyWhatsappButton.addEventListener('click', () => shareReport('whatsapp', journeyReportContent.textContent, ''));
+            journeyEmailButton.addEventListener('click', () => shareReport('email', journeyReportContent.textContent, 'Informe de Jornada de Carga'));
+
+            // --- RENDERIZADO INICIAL ---
+            renderProductList();
+            renderTruckList();
+            resultDiv.innerHTML = 'Listo para procesar. Pega un pedido y pulsa "Procesar y Añadir a Lote".';
+            resultDiv.className = '';
+            
+            // Iniciar en Modo Oficina por defecto
+            showOfficeMode();
+        });
+    </script>
+
+</body>
+</html>
