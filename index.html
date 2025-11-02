@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Carga v13.1 (Asistencia)</title>
+    <title>Gestión de Carga v15 (Final)</title>
     <style>
         /* --- ESTILOS GENERALES --- */
         :root {
@@ -289,7 +289,7 @@
     </div>
 
     <div id="office-mode">
-        <h1>Gestor de Carga (v13.1 - Oficina)</h1>
+        <h1>Gestor de Carga (v15 - Oficina)</h1>
 
         <div id="main-processor" class="container">
             <h2>1. Procesador de Pedidos</h2>
@@ -548,10 +548,15 @@
                 for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
                 document.getElementById(tabName).style.display = "block";
                 elmnt.className += " active";
-                if(tabName === 'tab-view-products') { renderProductList(); }
+                // OPTIMIZACIÓN V15: Solo renderizar cuando la pestaña de visualización esté activa
+                if(tabName === 'tab-view-products') { 
+                    setTimeout(renderProductList, 0); 
+                } else if (tabName === 'tab-view-trucks') { 
+                    setTimeout(renderTruckList, 0); 
+                }
             }
 
-            // --- GESTIÓN DE PRODUCTOS (OFICINA) ---
+            // --- GESTIÓN DE PRODUCTOS (OFICINA - OPTIMIZADO) ---
             const saveProducts = () => localStorage.setItem(PRODUCT_DB_KEY, JSON.stringify(productDB));
             const clearProductForm = () => {
                 productCodeInput.value = ''; productDescInput.value = ''; productVolumeInput.value = '';
@@ -563,11 +568,18 @@
                 if (!code) { alert('El Código es obligatorio.'); return; }
                 if (!desc) { alert('La Descripción es obligatoria.'); return; }
                 if (isNaN(volume) || volume < 0) { alert('El Volumen debe ser un número positivo.'); return; }
+                
                 productDB[code] = { desc, volume };
                 saveProducts(); clearProductForm();
-                const viewTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-view-products"]');
-                openTab('tab-view-products', viewTabButton);
-                searchProductInput.value = code; renderProductList();
+                
+                // OPTIMIZACIÓN V15: Usar setTimeout para evitar bloqueos del UI thread
+                setTimeout(() => {
+                    if (document.getElementById('tab-view-products').classList.contains('active')) {
+                        searchProductInput.value = code;
+                        renderProductList(); 
+                    }
+                }, 0);
+                
                 alert(`Producto ${code} guardado/actualizado.`);
             };
             window.editProduct = (code) => {
@@ -581,7 +593,9 @@
             };
             window.deleteProduct = (code) => {
                 if (confirm(`¿Eliminar producto ${code}?`)) {
-                    delete productDB[code]; saveProducts(); renderProductList();
+                    delete productDB[code]; 
+                    saveProducts(); 
+                    setTimeout(renderProductList, 0); // OPTIMIZACIÓN V15
                 }
             };
             const renderProductList = () => {
@@ -605,7 +619,7 @@
             };
             const clearAllProducts = () => {
                 if (confirm('¿BORRAR TODOS los productos?')) {
-                    productDB = {}; saveProducts(); renderProductList();
+                    productDB = {}; saveProducts(); setTimeout(renderProductList, 0); // OPTIMIZACIÓN V15
                 }
             };
             const exportProducts = () => {
@@ -614,7 +628,7 @@
                     const p = productDB[code]; csvContent += `${code},"${p.desc.replace(/"/g, '""')}",${p.volume}\n`;
                 });
                 const link = document.createElement("a"); link.setAttribute("href", encodeURI(csvContent));
-                link.setAttribute("download", "productos_carga_v13.csv"); document.body.appendChild(link);
+                link.setAttribute("download", "productos_carga_v15.csv"); document.body.appendChild(link);
                 link.click(); document.body.removeChild(link);
             };
             const toggleCsvImport = () => {
@@ -636,24 +650,37 @@
                         } catch (e) { errorCount++; }
                     } else if (line.trim() !== "" && !line.startsWith("Codigo")) { errorCount++; }
                 });
+                
                 if (importedCount > 0) {
                     saveProducts(); alert(`Importación: ${importedCount} productos añadidos/actualizados.`);
                     csvInput.value = ''; toggleCsvImport();
-                    const viewTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-view-products"]');
-                    openTab('tab-view-products', viewTabButton); searchProductInput.value = ''; renderProductList();
+                    
+                    // OPTIMIZACIÓN V15: Solo renderizar si el usuario está viendo la lista de productos
+                    setTimeout(() => {
+                        if (document.getElementById('tab-view-products').classList.contains('active')) {
+                             const viewTabButton = document.querySelector('#product-manager .tab-button[onclick*="tab-view-products"]');
+                             openTab('tab-view-products', viewTabButton); // Cambiar a la pestaña para mostrar el resultado
+                             searchProductInput.value = ''; renderProductList();
+                        }
+                    }, 0);
                 }
                 if (errorCount > 0) { alert(`${errorCount} líneas no pudieron ser procesadas.`); }
             };
 
-            // --- GESTIÓN DE CAMIONES (OFICINA) ---
+            // --- GESTIÓN DE CAMIONES (OFICINA - OPTIMIZADO) ---
             const saveTrucks = () => localStorage.setItem(TRUCK_DB_KEY, JSON.stringify(truckDB));
             const addTruck = () => {
                 const name = truckNameInput.value.trim(); const capacity = parseFloat(truckCapacityInput.value);
                 if (!name) { alert('El Nombre es obligatorio.'); return; }
                 if (isNaN(capacity) || capacity <= 0) { alert('La Capacidad debe ser un número positivo.'); return; }
+                
                 truckDB[name] = { capacity }; saveTrucks();
                 truckNameInput.value = ''; truckCapacityInput.value = '';
-                renderTruckList(); alert(`Camión ${name} guardado/actualizado.`);
+                
+                // OPTIMIZACIÓN V15: Llama a renderTruckList() con setTimeout
+                setTimeout(renderTruckList, 0); 
+                
+                alert(`Camión ${name} guardado/actualizado.`);
             };
             window.editTruck = (name) => {
                 const truck = truckDB[name];
@@ -661,7 +688,7 @@
             };
             window.deleteTruck = (name) => {
                 if (confirm(`¿Eliminar camión ${name}?`)) {
-                    delete truckDB[name]; saveTrucks(); renderTruckList();
+                    delete truckDB[name]; saveTrucks(); setTimeout(renderTruckList, 0); // OPTIMIZACIÓN V15
                 }
             };
             const renderTruckList = () => {
@@ -679,11 +706,11 @@
             };
             const clearAllTrucks = () => {
                 if (confirm('¿BORRAR TODOS los camiones?')) {
-                    truckDB = {}; saveTrucks(); renderTruckList();
+                    truckDB = {}; saveTrucks(); setTimeout(renderTruckList, 0); // OPTIMIZACIÓN V15
                 }
             };
 
-            // --- PROCESADOR DE PEDIDOS (OFICINA - v13) ---
+            // --- PROCESADOR DE PEDIDOS (OFICINA) ---
             const parsePedido = (text) => {
                 const lines = text.split('\n'); const products = new Map(); let truckName = null;
                 const productRegex = /^\s*(\d+(\.\d+)?)\s+(\S+)\s+-\s+(.+)$/;
@@ -757,7 +784,8 @@
                     saveProducts(); 
                     importNotificationDiv.innerHTML = `<strong>¡Productos Importados!</strong><br>Se han añadido ${importedProducts.length} productos nuevos. <strong>Acción Requerida:</strong> Actualiza sus volúmenes.`;
                     importNotificationDiv.style.display = 'block';
-                    if (document.getElementById('tab-view-products').style.display === 'block') { renderProductList(); }
+                    // OPTIMIZACIÓN V15: Usar setTimeout
+                    setTimeout(() => { if (document.getElementById('tab-view-products').style.display === 'block') { renderProductList(); } }, 0);
                 } else { importNotificationDiv.style.display = 'none'; }
 
                 const remainingCapacity = truck.capacity - totalVolume;
@@ -769,7 +797,7 @@
                     resultDiv.className = 'success';
                     resultHTML += `<h2><span style="font-size: 2.5rem;">✅</span> ¡AÑADIDO AL LOTE!</h2>`;
                     resultHTML += `<p><strong>Camión: ${truckName}</strong> | <strong>Volumen Total: ${totalVolume.toFixed(4)} m³</strong></p>`;
-                    // v13: Guardar plan en el lote SÓLO SI CABE
+                    // Guardar plan en el lote SÓLO SI CABE
                     const newPlan = { truckName, loadList: productListForLoading };
                     preparedPlans.push(newPlan);
                 }
@@ -785,7 +813,7 @@
                 pedidoInput.value = ''; // Limpiar el input después de procesar
             };
             
-            // --- v13: Lógica de Lotes (Oficina) ---
+            // --- Lógica de Lotes (Oficina) ---
             const renderPreparedPlansList = () => {
                 if (preparedPlans.length === 0) {
                     preparedPlansContainer.style.display = 'none';
@@ -832,7 +860,7 @@
                 }
             };
 
-            // --- LÓGICA DE CAMBIO DE MODO (Global) ---
+            // --- LÓGICA DE CAMBIO DE MODO (Global - Simplificado) ---
             const showOfficeMode = () => {
                 operatorModeDiv.style.display = 'none';
                 officeModeDiv.style.display = 'grid';
@@ -848,7 +876,10 @@
                 document.body.style.backgroundColor = '#2c3e50';
             };
             
+            // --- EVENTOS DE MODO Y ASISTENCIA (CORREGIDOS V15) ---
+
             toggleModeButton.addEventListener('click', () => {
+                // Si está en oficina y quiere ir a operario O si está en operario y quiere ir a oficina
                 if (officeModeDiv.style.display === 'grid') {
                     showOperatorMode();
                 } else {
@@ -858,7 +889,23 @@
                 }
             });
 
-            // --- LÓGICA MODO OPERARIO (v13) ---
+            assistanceButton.addEventListener('click', () => {
+                const phone = '+34643734158';
+                
+                // Pedir la descripción antes de intentar abrir el enlace
+                const problem = prompt('Por favor, describe brevemente tu problema de asistencia (WhatsApp):');
+
+                if (problem) {
+                    const message = `¡Hola! Necesito asistencia con la app Gestor de Carga (v15).\n\nProblema: ${problem}`;
+                    
+                    // CORRECCIÓN V15: Usamos wa.me/send para evitar el error 403 Forbidden de la API
+                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                    
+                    window.open(url, '_blank');
+                }
+            });
+
+            // --- LÓGICA MODO OPERARIO ---
             
             const showOperatorScreen = (screenId) => {
                 document.querySelectorAll('.operator-screen').forEach(s => s.style.display = 'none');
@@ -884,21 +931,37 @@
                 showOperatorScreen('op-paste-plans-screen');
             };
             
+            // --- CÓDIGO CRÍTICO DE TRANSFERENCIA (ROBUSTO) ---
             const loadPlansFromText = () => {
-                const text = opPasteTextarea.value.trim();
+                // LIMPIEZA CRÍTICA: Quitamos espacios y saltos de línea para Base64
+                const text = opPasteTextarea.value.trim().replace(/\s/g, ''); 
+
                 if (!text) { alert('El área de texto está vacía.'); return; }
+                
                 try {
+                    // Validación de caracteres Base64
+                    if (!/^[A-Za-z0-9+/=]+$/.test(text)) {
+                         throw new Error('El texto contiene caracteres inválidos para Base64.');
+                    }
+                    
                     const decodedString = atob(text); // Decodificar Base64
                     operatorTrucksPending = JSON.parse(decodedString);
+                    
                     if (!Array.isArray(operatorTrucksPending) || operatorTrucksPending.length === 0) {
-                        throw new Error('No se encontraron planes válidos.');
+                        throw new Error('No se encontraron planes válidos o el formato es incorrecto.');
                     }
+                    
                     renderOperatorTruckList();
                     showOperatorScreen('op-truck-list-screen');
+                    speak('Planes de carga cargados. Listos para empezar.');
+                    
                 } catch (e) {
-                    alert('Error al cargar los planes. El texto no es válido.\n' + e.message);
+                    console.error("Fallo de Carga de Planes:", e);
+                    // Mensaje de error detallado
+                    alert(`Error al cargar los planes. Confirme que copió el texto COMPLETO sin modificar. \n\nDetalle del fallo: ${e.message}`);
                 }
             };
+            // --- FIN DE CÓDIGO CRÍTICO MODIFICADO ---
             
             const renderOperatorTruckList = () => {
                 opTruckListContainer.innerHTML = '';
@@ -1022,33 +1085,13 @@
                 const text = textContent;
                 let url = '';
                 if (via === 'whatsapp') {
-                    url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                    // Usamos la URL de wa.me para el envío de informes
+                    url = `https://wa.me/?text=${encodeURIComponent(text)}`;
                 } else {
                     url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
                 }
                 window.open(url, '_blank');
             };
-
-            // --- ASIGNACIÓN DE EVENTOS (GLOBAL) ---
-            toggleModeButton.addEventListener('click', () => {
-                if (officeModeDiv.style.display === 'grid') {
-                    showOperatorMode();
-                } else {
-                    if (journeyStartTime === null || confirm('¿Salir del Modo Operario? Se perderá el progreso de la jornada.')) {
-                        showOfficeMode();
-                    }
-                }
-            });
-
-            assistanceButton.addEventListener('click', () => {
-                const phone = '+34643734158';
-                const problem = prompt('Por favor, describe brevemente tu problema:');
-                if (problem) {
-                    const message = `¡Hola! Necesito asistencia con la app Gestor de Carga (v13.1).\n\nProblema: ${problem}`;
-                    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
-                    window.open(url, '_blank');
-                }
-            });
 
             // --- ASIGNACIÓN DE EVENTOS (OFICINA) ---
             processButton.addEventListener('click', processPedido);
@@ -1058,7 +1101,7 @@
             addProductButton.addEventListener('click', addProduct);
             clearProductFormButton.addEventListener('click', clearProductForm);
             clearProductsButton.addEventListener('click', clearAllProducts);
-            searchProductInput.addEventListener('input', renderProductList);
+            searchProductInput.addEventListener('input', () => setTimeout(renderProductList, 0)); // OPTIMIZACIÓN V15
             exportProductsButton.addEventListener('click', exportProducts);
             toggleCsvButton.addEventListener('click', toggleCsvImport);
             importCsvButton.addEventListener('click', importCsvProducts);
@@ -1092,16 +1135,17 @@
             journeyEmailButton.addEventListener('click', () => shareReport('email', journeyReportContent.textContent, 'Informe de Jornada de Carga'));
 
             // --- RENDERIZADO INICIAL ---
-            renderProductList();
-            renderTruckList();
-            resultDiv.innerHTML = 'Listo para procesar. Pega un pedido y pulsa "Procesar y Añadir a Lote".';
-            resultDiv.className = '';
-            
-            // Iniciar en Modo Oficina por defecto
-            showOfficeMode();
+            // Se usa setTimeout para asegurar que el DOM cargue completamente antes de procesar las DB
+            setTimeout(() => {
+                renderProductList();
+                renderTruckList();
+                renderPreparedPlansList();
+                resultDiv.innerHTML = 'Listo para procesar. Pega un pedido y pulsa "Procesar y Añadir a Lote".';
+                resultDiv.className = '';
+                showOfficeMode();
+            }, 50);
         });
     </script>
 
 </body>
-
 </html>
